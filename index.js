@@ -2,14 +2,14 @@ const express = require('express')
 const app = express()
 const cors = require('cors')
 const morgan = require('morgan')
+const Person = require('./models/person')
 
 app.use(cors())
 app.use(express.static('build'))
 const bodyParser = require('body-parser')
 app.use(bodyParser.json())
 
-morgan.token('type', function (req, res)
- { return JSON.stringify(req.body) })
+morgan.token('type', function (req, res) { return JSON.stringify(req.body) })
 var logger = morgan(function (tokens, req, res) {
   return [
     tokens.method(req, res),
@@ -22,75 +22,123 @@ var logger = morgan(function (tokens, req, res) {
 })
 app.use(logger)
 
-let ppl = []
 
 app.get('/api/info', (req, res) => {
-  res.send('<p>puhelinluettelossa ' + ppl.length + ' ihmisen tiedot</p>' +
-    '<p>' + Date() + '<p>')
+  Person
+    .find({})
+    .then(person => {
+      res.send('<p>puhelinluettelossa ' + person.length + ' ihmisen tiedot</p>' +
+        '<p>' + Date() + '<p>')
+    })
 })
 
 app.get('/api/persons', (request, response) => {
-  response.json(ppl)
+  Person
+    .find({})
+    .then(person => {
+      response.json(person.map(formatPerson))
+    })
 })
 
 app.get('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id)
-  const person = ppl.find(person => person.id === id)
+  Person
+    .findById(request.params.id)
+    .then(person => {
 
-  if (person) {
-    response.json(person)
-  } else {
-    response.status(404).end()
-  }
+      if (person) {
+        response.json(formatPerson(person))
+      } else {
+        response.status(404).end()
+      }
+    }).catch(error => {
+      console.log(error)
+      response.status(400).send({ error: 'malformatted id' })
+    })
 })
 
 app.delete('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id)
-  ppl = ppl.filter(person => person.id !== id)
 
-  response.status(204).end()
+  Person
+    .findByIdAndRemove(request.params.id)
+    .then(result => {
+      response.status(204).end()
+    })
+    .catch(error => {
+      response.status(400).send({ error: 'malformatted id' })
+    })
 })
 
 app.post('/api/persons', (request, response) => {
-  const person = request.body
-
-  if (person.number) {
-    //const reg = new RegExp('^[0-9]+$')
-    //if (!reg.test(person.number)) {
-    //return response.status(400).json({ error: 'number incorrect format' })
-    //  }
+  body = request.body
+  if (body === undefined) {
+    return response.status(400).json({ error: 'content missing' })
+  }
+  if (body.number) {
   } else {
     return response.status(400).json({ error: 'number missing' })
   }
+  if (body.name) {
+    Person
+      .find({})
+      .then(person => {
+        all = (person.map(formatPerson))
+        const found = all.filter(aPerson => aPerson.name === body.name)
+        if (found.length !== 0) {
+          response.status(400).send({ error: 'dude exists' })
+        } else {
+          const person = new Person({
+            name: body.name,
+            number: body.number,
+          })
+          person
+            .save()
+            .then(savedPerson => {
+              response.json(formatPerson(savedPerson))
+            })
+        }
+      })
 
-  if (person.name) {
-    //if (person.name.length > 100) {
-    //return response.status(400).json({ error: 'Name too long! max length:100' })
-    // }
-
-    const found = ppl.filter(dude => dude.name === person.name)
-    if (found.length !== 0) {
-      return response.status(400).json({ error: 'Person with same name already exists!' })
-
-    }
   } else {
     return response.status(400).json({ error: 'name missing' })
   }
-  const id = uniqRandomId(ppl)
-  person.id = id
-
-  ppl = ppl.concat(person)
-
-  response.json(person)
 })
 
-function uniqRandomId(content) {
-  const id = Math.floor(Math.random() * Math.floor(2000000));
-  const found = ppl.filter(person => person.id === id)
-  if (found.length == 0) {
-    return id
+app.put('/api/persons/:id', (request, response) => {
+  body = request.body
+  if (body === undefined) {
+    return response.status(400).json({ error: 'content missing' })
   }
-  return uniqRandomId(content)
+  if (body.number) {
+  } else {
+    return response.status(400).json({ error: 'number missing' })
+  }
+  if (body.name) {
+
+    const dude = {
+      name: body.name,
+      number: body.number
+    }
+    Person
+      .findByIdAndUpdate(request.params.id, dude, { new: true })
+      .then(updatedPerson => {
+        console.log('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+        response.json(formatPerson(updatedPerson))
+      })
+      .catch(error => {
+        console.log(error)
+        response.status(400).send({ error: 'malformatted id' })
+      })
+  } else {
+    return response.status(400).json({ error: 'name missing' })
+  }
+})
+
+const formatPerson = (person) => {
+  const formattedPerson = { ...person._doc, id: person._id }
+  delete formattedPerson._id
+  delete formattedPerson.__v
+
+  return formattedPerson
 }
 
 const PORT = process.env.PORT || 3001
