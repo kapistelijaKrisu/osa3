@@ -22,29 +22,9 @@ var logger = morgan(function (tokens, req, res) {
 })
 app.use(logger)
 
-let ppl = [
-  {
-    "name": "aa",
-    "number": "",
-    "id": 1
-  },
-  {
-    "name": "a",
-    "number": "33443",
-    "id": 2
-  },
-  {
-    "name": "fd",
-    "number": "erdfg",
-    "id": 3
-  }
-]
+let ppl = []
 
-app.get('/test', (req, res) => {
-  res.send('<p>' + uniqRandomId(ppl) + '<p>')
-})
-
-app.get('/info', (req, res) => {
+app.get('/api/info', (req, res) => {
   res.send('<p>puhelinluettelossa ' + ppl.length + ' ihmisen tiedot</p>' +
     '<p>' + Date() + '<p>')
 })
