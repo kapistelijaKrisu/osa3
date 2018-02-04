@@ -4,7 +4,7 @@ const mongoose = require('mongoose')
 const url = 'mongodb://tuto:fullstack@ds223268.mlab.com:23268/fullstackweek3'
 
 mongoose.connect(url)
-mongoose.Promise = global.Promise;
+mongoose.Promise = global.Promise
 
 const Person = mongoose.model('Person', {
   name: String,
@@ -14,20 +14,19 @@ const Person = mongoose.model('Person', {
 if (process.argv.length !== 4) {
   console.log('puhelinluettelo:')
   Person
-  .find({})
-  .then(result => {
-    result.forEach(person => {
-      
-      console.log(person.name, person.number)
+    .find({})
+    .then(result => {
+      result.forEach(person => {
+
+        console.log(person.name, person.number)
+      })
+      mongoose.connection.close()
     })
-    mongoose.connection.close()
-  })
 } else {
   const person = new Person({
     name: process.argv[2],
     number: process.argv[3]
   })
-  
   person
     .save()
     .then(response => {
@@ -40,4 +39,4 @@ if (process.argv.length !== 4) {
 
 
 
- 
+
