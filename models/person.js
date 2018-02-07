@@ -13,19 +13,12 @@ const personSchema = new mongoose.Schema({
   number: String
 })
 
-Person.statics.formatPerson = function(person){
+personSchema.statics.format = function(person){
   const formattedPerson = { ...person._doc, id: person._id }
   delete formattedPerson._id
   delete formattedPerson.__v
   return ({formattedPerson})
 };
-
-const formatPerson = (person) => {
-  
-
-  return formattedPerson
-}
-
 
 const Person = mongoose.model('Person', personSchema)
 
